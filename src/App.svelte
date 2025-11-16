@@ -1,7 +1,7 @@
 <script lang="ts">
   type Time = { hour: number, minute: number, second: number };
   type DateTime = { day: number } & Time;
-  type Preset = { label: string, amount: DateTime };
+  type Preset = { label?: string, amount: DateTime };
   type Event = { when: DateTime, summary: string, dmOnly: boolean, description: string|null };
 
   type StateVersion1 = {
@@ -98,15 +98,17 @@
   function addPreset(this : HTMLFormElement, event : SubmitEvent) {
       event.preventDefault();
 
+      let label = (this.elements.namedItem("label")! as HTMLInputElement).value;
+
       s.presets.push({
-          label: (this.elements.namedItem("label")! as HTMLInputElement).value,
+          label: label ? label : undefined,
           amount: {
               day: (this.elements.namedItem("days")! as HTMLInputElement).valueAsNumber,
               hour: (this.elements.namedItem("hours")! as HTMLInputElement).valueAsNumber,
               minute: (this.elements.namedItem("minutes")! as HTMLInputElement).valueAsNumber,
               second: (this.elements.namedItem("seconds")! as HTMLInputElement).valueAsNumber,
           },
-      })
+      });
 
       this.reset();
   }
@@ -213,8 +215,14 @@
   <div id="advance-time">
     <h2>Advance Time</h2>
     <div class="presets">
-      {#each s.presets as preset (preset.label)}
-        <button type="button" onclick={() => advanceNow(preset.amount)}>{preset.label} ({formatAdvance(preset.amount)})</button>
+      {#each s.presets as preset (preset.label ?? formatAdvance(preset.amount))}
+        <button type="button" onclick={() => advanceNow(preset.amount)}>
+          {#if preset.label}
+            {preset.label} ({formatAdvance(preset.amount)})
+          {:else}
+            {formatAdvance(preset.amount)}
+          {/if}
+        </button>
       {/each}
     </div>
 
@@ -223,7 +231,7 @@
       <form onsubmit={addPreset}>
           <label>
             Label
-            <input required type="text" name="label" />
+            <input type="text" name="label" />
           </label>
           <div class="selector">
             <label>
