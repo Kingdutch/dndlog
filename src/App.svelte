@@ -229,19 +229,23 @@
 </script>
 
 <main class={s.mode === "dm" ? "dm-view" : "player-view"}>
-  <h1>
-    {#if s.mode === "player"}
-      Events up to
+  <div id="header">
+    <h1>
+      {#if s.mode === "player"}
+        Events up to
+      {/if}
+      {moment}
+    </h1>
+
+    {#if s.mode === "dm"}
+      <div id="shortcuts">
+        <button type="button" onclick={copyDMUrl}>Copy DM URL</button>
+        <button type="button" onclick={copyPlayerUrl}>Copy Player URL</button>
+      </div>
     {/if}
-    {moment}
-  </h1>
+  </div>
 
   {#if s.mode === "dm"}
-    <div id="shortcuts">
-      <button type="button" onclick={copyDMUrl}>Copy DM URL</button>
-      <button type="button" onclick={copyPlayerUrl}>Copy Player URL</button>
-    </div>
-
     <div id="advance-time">
       <h2>Advance Time</h2>
       <div class="presets">
@@ -343,21 +347,23 @@
     padding: 1rem;
   }
 
-  main.dm-view {
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    grid-auto-rows: minmax(100px, auto);
-    grid-template-areas:
-      "time time time time  shrt  shrt  shrt  shrt "
-      "adv  adv  adv  entry entry entry entry entry"
-      "adv  adv  adv  log   log   log   log   log  "
-      "adv  adv  adv  log   log   log   log   log  "
-    ;
-    gap: 1rem;
+  @media (min-width: 800px) {
+    main.dm-view {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-auto-rows: minmax(100px, auto);
+      grid-template-areas:
+        "hdr  hdr  hdr  hdr   hdr   hdr   hdr   hdr   hdr  "
+        "adv  adv  adv  entry entry entry entry entry entry"
+        "adv  adv  adv  log   log   log   log   log   log  "
+        "adv  adv  adv  log   log   log   log   log   log  "
+      ;
+      gap: 1rem;
 
-    h1 {
-      grid-area: time;
-      align-content: center;
+      #header {
+        grid-area: hdr;
+        align-content: center;
+      }
     }
   }
 
@@ -366,8 +372,20 @@
     flex-direction: column;
   }
 
+  #header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+
+    @media (min-width: 500px) {
+      h1 {
+        flex: 1 0 29rem;
+      }
+    }
+  }
+
   #shortcuts {
-    grid-area: shrt;
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
