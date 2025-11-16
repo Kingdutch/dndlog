@@ -1,4 +1,6 @@
 <script lang="ts">
+  import logo from "/dndlog.png";
+
   type Mode = "dm" | "player";
   type Time = { hour: number, minute: number, second: number };
   type DateTime = { day: number } & Time;
@@ -230,6 +232,8 @@
 
 <main class={s.mode === "dm" ? "dm-view" : "player-view"}>
   <div id="header">
+    <img src={logo} width="56" alt="DND Log"/>
+
     <h1>
       {#if s.mode === "player"}
         Events up to
@@ -375,12 +379,24 @@
   #header {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
     gap: 1rem;
+    align-items: center;
+    justify-content: center;
 
-    @media (min-width: 500px) {
+    @media (min-width: 600px) {
+      img {
+        width: 76px;
+      }
+    }
+
+    @media (min-width: 900px) {
+      justify-content: space-between;
+
+      img {
+        width: 108px;
+      }
       h1 {
-        flex: 1 0 29rem;
+        margin-right: auto;
       }
     }
   }
