@@ -158,7 +158,21 @@
 
 
   function decodeState(encoded : string) : StateVersion1 {
-      return JSON.parse(atob(encoded));
+      try {
+          return JSON.parse(atob(encoded));
+      }
+      catch (e) {
+          if (e instanceof DOMException) {
+              console.error("Error decoding base64 string", e);
+          }
+          else if (e instanceof SyntaxError) {
+              console.error("Error decoding JSON string", e);
+          }
+          else {
+              console.error("Unexpected error", e);
+          }
+          return defaultState;
+      }
   }
 
   function isDefaultState(state : StateVersion1) {
