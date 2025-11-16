@@ -1,4 +1,5 @@
 <script lang="ts">
+  type Mode = "dm" | "player";
   type Time = { hour: number, minute: number, second: number };
   type DateTime = { day: number } & Time;
   type Preset = { label?: string, amount: DateTime };
@@ -6,6 +7,7 @@
 
   type StateVersion1 = {
       version: 1,
+      mode: Mode,
       now: DateTime,
       events: Event[],
       presets: Preset[],
@@ -13,6 +15,7 @@
 
   const defaultState = {
       version: 1,
+      mode: "dm",
       now: { day: 1, hour: 12, minute: 0, second: 0 },
       events: [],
       presets: [
@@ -159,7 +162,12 @@
 
   function decodeState(encoded : string) : StateVersion1 {
       try {
-          return JSON.parse(atob(encoded));
+          let state = JSON.parse(atob(encoded));
+          // Additional change of mode field.
+          if (typeof state.mode === "undefined") {
+              state.mode = "dm";
+          }
+          return state;
       }
       catch (e) {
           if (e instanceof DOMException) {
@@ -210,6 +218,7 @@
   function filterPlayerState(state: StateVersion1) : StateVersion1 {
       return {
           version: 1,
+          mode: "player",
           now: state.now,
           // DM Presets may contain secrets.
           presets: defaultState.presets,
@@ -219,78 +228,85 @@
 
 </script>
 
-<main>
-  <h1>{moment}</h1>
-  <div id="shortcuts">
-    <button type="button" onclick={copyDMUrl}>Copy DM URL</button>
-    <button type="button" onclick={copyPlayerUrl}>Copy Player URL</button>
-  </div>
+<main class={s.mode === "dm" ? "dm-view" : "player-view"}>
+  <h1>
+    {#if s.mode === "player"}
+      Events up to
+    {/if}
+    {moment}
+  </h1>
 
-  <div id="advance-time">
-    <h2>Advance Time</h2>
-    <div class="presets">
-      {#each s.presets as preset (preset.label ?? formatAdvance(preset.amount))}
-        <button type="button" onclick={() => advanceNow(preset.amount)}>
-          {#if preset.label}
-            {preset.label} ({formatAdvance(preset.amount)})
-          {:else}
-            {formatAdvance(preset.amount)}
-          {/if}
-        </button>
-      {/each}
+  {#if s.mode === "dm"}
+    <div id="shortcuts">
+      <button type="button" onclick={copyDMUrl}>Copy DM URL</button>
+      <button type="button" onclick={copyPlayerUrl}>Copy Player URL</button>
     </div>
 
-    <details id="add-preset">
-      <summary>Add preset</summary>
-      <form onsubmit={addPreset}>
-          <label>
-            Label
-            <input type="text" name="label" />
-          </label>
-          <div class="selector">
-            <label>
-              Days
-              <input required value="0" min="0" type="number" name="days" />
-            </label>
-            <label>
-              Hours
-              <input required value="0" min="0" max="23" type="number" name="hours" />
-            </label>
-            <label>
-              Minutes
-              <input required value="0" min="0" max="59" type="number" name="minutes" />
-            </label>
-            <label>
-              Seconds
-              <input required value="0" min="0" max="59" type="number" name="seconds" />
-            </label>
-          </div>
+    <div id="advance-time">
+      <h2>Advance Time</h2>
+      <div class="presets">
+        {#each s.presets as preset (preset.label ?? formatAdvance(preset.amount))}
+          <button type="button" onclick={() => advanceNow(preset.amount)}>
+            {#if preset.label}
+              {preset.label} ({formatAdvance(preset.amount)})
+            {:else}
+              {formatAdvance(preset.amount)}
+            {/if}
+          </button>
+        {/each}
+      </div>
 
-          <input type="submit" value="Add preset" />
-      </form>
-    </details>
-  </div>
+      <details id="add-preset">
+        <summary>Add preset</summary>
+        <form onsubmit={addPreset}>
+            <label>
+              Label
+              <input type="text" name="label" />
+            </label>
+            <div class="selector">
+              <label>
+                Days
+                <input required value="0" min="0" type="number" name="days" />
+              </label>
+              <label>
+                Hours
+                <input required value="0" min="0" max="23" type="number" name="hours" />
+              </label>
+              <label>
+                Minutes
+                <input required value="0" min="0" max="59" type="number" name="minutes" />
+              </label>
+              <label>
+                Seconds
+                <input required value="0" min="0" max="59" type="number" name="seconds" />
+              </label>
+            </div>
 
+            <input type="submit" value="Add preset" />
+        </form>
+      </details>
+    </div>
 
-  <div id="add-entry">
-  <h2>Add entry</h2>
-  <form onsubmit={addEntry}>
-    <label>
-      Summary
-      <input type="text" name="summary" required />
-    </label>
-    <label>
-      <input type="checkbox" name="dm-only" value="1" checked />
-      DM Only
-    </label>
-    <label class="stacked">
-      Description
-      <textarea name="description"></textarea>
-    </label>
+    <div id="add-entry">
+    <h2>Add entry</h2>
+    <form onsubmit={addEntry}>
+      <label>
+        Summary
+        <input type="text" name="summary" required />
+      </label>
+      <label>
+        <input type="checkbox" name="dm-only" value="1" checked />
+        DM Only
+      </label>
+      <label class="stacked">
+        Description
+        <textarea name="description"></textarea>
+      </label>
 
-    <input type="submit" value="Add">
-  </form>
-  </div>
+      <input type="submit" value="Add">
+    </form>
+    </div>
+  {/if}
 
   <div id="timeline">
     <h2>Timeline</h2>
@@ -324,6 +340,10 @@
   }
 
   main {
+    padding: 1rem;
+  }
+
+  main.dm-view {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     grid-auto-rows: minmax(100px, auto);
@@ -334,7 +354,6 @@
       "adv  adv  adv  log   log   log   log   log  "
     ;
     gap: 1rem;
-    padding: 1rem;
 
     h1 {
       grid-area: time;
